@@ -1,5 +1,20 @@
 const product_name = "Midtrans Pillow"
 
+const credit_card = {
+    valid: {
+        card_number: "4811111111111114",
+        expire_date: "02/22",
+        cvv_number: "123",
+        bank_otp: "112233"
+    },
+    invalid: {
+        card_number: "4811111111111113",
+        expire_date: "02/22",
+        cvv_number: "123",
+        bank_otp: "112233"
+    }
+}
+
 //clickIframeElement: function for click element on Iframe 
 function clickIframeElement(element){
     cy.get('iframe').then($iframe => {
@@ -7,6 +22,15 @@ function clickIframeElement(element){
         cy.wrap($body)
         .find(element)
         .click()
+    })
+}
+
+function typeIframeElement(element, text){
+    cy.get('iframe').then($iframe => {
+        const $body = $iframe.contents().find('body')
+        cy.wrap($body)
+        .find(element)
+        .type(text)
     })
 }
 
@@ -38,5 +62,17 @@ describe('UI Test of demo.midtrans.com', function() {
     })
     it('Click "Credit Card" as Payment Method', function() {
         clickIframeElement('#payment-list > div:nth-child(1) > a > div.list-content > div.list-title.text-actionable-bold')
+    })
+    it('Input Credit Card Number', function() {
+        typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-12 > input[type=tel]', credit_card.valid.card_number)
+    })
+    it('Input Expiry Date', function() {
+        typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-7 > input[type=tel]', credit_card.valid.expire_date)
+    })
+    it('Input CVV Number', function() {
+        typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-5 > input[type=tel]', credit_card.valid.cvv_number)
+    })
+    it('click "Pay Now" Button', function() {
+        clickIframeElement('#application > div.button-main.show > a')
     })
 })
