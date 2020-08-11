@@ -15,8 +15,11 @@ const credit_card = {
     }
 }
 
-//clickIframeElement: function for click element on Iframe 
-function clickIframeElement(element){
+const success_message1 = "Thank you for your purchase."
+const success_message2 = "Get a nice sleep."
+
+//clickIframeElement: function for click element on outer Iframe 
+const clickIframeElement = (element) => {
     cy.get('iframe').then($iframe => {
         const $body = $iframe.contents().find('body')
         cy.wrap($body)
@@ -25,7 +28,8 @@ function clickIframeElement(element){
     })
 }
 
-function typeIframeElement(element, text){
+//clickIframeElement: function for type element on outer Iframe 
+const typeIframeElement = (element, text) =>{
     cy.get('iframe').then($iframe => {
         const $body = $iframe.contents().find('body')
         cy.wrap($body)
@@ -33,6 +37,23 @@ function typeIframeElement(element, text){
         .type(text)
     })
 }
+
+//getInnerIframeElement: function to get inner Iframe element
+const getInnerIframeElement = () => {
+    const outerIframe = cy.get('iframe')
+      .its("0.contentDocument.body")
+      .should("not.be.empty")
+      .then(cy.wrap)
+  
+    const innerIframe = outerIframe
+      .find('#application > div.container-fluid > div > div > div > iframe')
+      .its("0.contentDocument.body")
+      .should("not.be.empty")
+      .then(cy.wrap)
+  
+    return innerIframe
+  }
+
 
 describe('UI Test of demo.midtrans.com', function() {
     before(function(){
@@ -72,7 +93,17 @@ describe('UI Test of demo.midtrans.com', function() {
     it('Input CVV Number', function() {
         typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-5 > input[type=tel]', credit_card.valid.cvv_number)
     })
-    it('click "Pay Now" Button', function() {
+    it('Click "Pay Now" Button', function() {
         clickIframeElement('#application > div.button-main.show > a')
+    })
+    it('Input Bank OTP Number', function() {
+        getInnerIframeElement().find('#PaRes').type(credit_card.valid.bank_otp)
+    })
+    it('Click "OK" Button' ,function() {
+        getInnerIframeElement().find('#acsForm > div:nth-child(8) > div > button.btn.btn-sm.btn-success').click()
+    })
+    it('Assert Transaction Success, Verify Success Message', function() {
+        cy.get('[data-reactid=".0.0.0.2.0.1.0.0:0"]', { timeout: 10000}).should('be.exist').and('have.text', success_message1)
+        cy.get('[data-reactid=".0.0.0.2.0.1.0.0:2"]', { timeout: 10000}).should('be.exist').and('have.text', success_message2)
     })
 })
