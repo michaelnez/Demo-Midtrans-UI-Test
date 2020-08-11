@@ -18,6 +18,17 @@ const credit_card = {
 const success_message1 = "Thank you for your purchase."
 const success_message2 = "Get a nice sleep."
 
+//assertIframeElementAndText: function for assert element and text on outer Iframe
+const assertIframeElementAndText = (element, text) => {
+    cy.get('iframe').then($iframe => {
+        const $body = $iframe.contents().find('body')
+        cy.wrap($body)
+        .find(element)
+        .should('be.exist')
+        .and('have.text', text)
+    })
+}
+
 //clickIframeElement: function for click element on outer Iframe 
 const clickIframeElement = (element) => {
     cy.get('iframe').then($iframe => {
@@ -55,7 +66,7 @@ const getInnerIframeElement = () => {
   }
 
 
-describe('UI Test of demo.midtrans.com', function() {
+describe('Successful Payment Flow of demo.midtrans.com', function() {
     before(function(){
         cy.visit('https://demo.midtrans.com/')
     })
@@ -105,5 +116,54 @@ describe('UI Test of demo.midtrans.com', function() {
     it('Assert Transaction Success, Verify Success Message', function() {
         cy.get('[data-reactid=".0.0.0.2.0.1.0.0:0"]', { timeout: 10000}).should('be.exist').and('have.text', success_message1)
         cy.get('[data-reactid=".0.0.0.2.0.1.0.0:2"]', { timeout: 10000}).should('be.exist').and('have.text', success_message2)
+    })
+})
+
+describe('Failed Payment Flow of demo.midtrans.com', function() {
+    before(function(){
+        cy.visit('https://demo.midtrans.com/')
+    })
+    beforeEach(function() {
+        //Before each function, preserve the cookie
+        Cypress.Cookies.preserveOnce('_ga', '__cfduid', '_csrf', '_gid', '_gat')
+    })
+    it('Assert URL is Correct', function(){
+        cy.url().should('eq', 'https://demo.midtrans.com/')
+    })
+    it(`Assert Product ${product_name} Appeared`, function() {
+        cy.get('[data-reactid=".0.0.0.2.0.0.0"]').should('have.text', product_name)
+    })
+    it('Click "Buy Now" Button', function() {
+        cy.get('.buy').click()
+    })
+    it('Assert Product Added to Shopping Cart', function(){
+        cy.get('[data-reactid=".0.0.1.0.0.1"]').should('be.exist').and('have.text', "1")
+    })
+    it('Click "Checkout" Button', function() {
+        cy.get('[data-reactid=".0.0.1.1.0"]').click()
+    })
+    it('Click "Continue" on Iframe', function() {
+        clickIframeElement('#application > div.button-main.show')
+    })
+    it('Click "Credit Card" as Payment Method', function() {
+        clickIframeElement('#payment-list > div:nth-child(1) > a > div.list-content > div.list-title.text-actionable-bold')
+    })
+    it('Input Invalid Credit Card Number', function() {
+        typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-12 > input[type=tel]', credit_card.invalid.card_number)
+    })
+    it('Assert "Invalid Card Number" Alert Text Appeared', function() {
+        assertIframeElementAndText('div.notice.danger', 'Invalid card number')
+    })
+    it('Input Expiry Date', function() {
+        typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-7 > input[type=tel]', credit_card.invalid.expire_date)
+    })
+    it('Input CVV Number', function() {
+        typeIframeElement('#application > div.container-fluid > div > div > div > form > div:nth-child(2) > div.input-group.col-xs-5 > input[type=tel]', credit_card.invalid.cvv_number)
+    })
+    it('Click "Pay Now" Button', function() {
+        clickIframeElement('#application > div.button-main.show > a')
+    })
+    it('Assert Page Is Not Redirected, Still on Credit Card Page', function() {
+        assertIframeElementAndText('#header > div > span > p', 'Credit Card')
     })
 })
